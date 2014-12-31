@@ -193,7 +193,18 @@ def main()
     print session.html()
   }
 end
-main()
+
+begin
+  main()
+rescue => e
+  puts("Context-Type: text/html\n\n")
+  puts("<pre>\n")
+  puts("Fatal Exception: #{e.to_s}\n")
+  puts("#{e.backtrace()}")
+  puts("</pre>\n")
+  sleep(10)
+  retry
+end
 __END__
 <html>
  <head>
