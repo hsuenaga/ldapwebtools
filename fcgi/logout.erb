@@ -1,0 +1,23 @@
+<html>
+ <head>
+   <title>Logout</title>
+ </head>
+
+ <body>
+   <H1>Logout</H1>
+   <form action="/admin/password" method="post">
+     <input type="hidden" name="logout" value="yes">
+     <div>
+       <input type="submit" value="Logout">
+     </div>
+     <input type="hidden" name="nextpage" value="<%="#{pageid(@nextpage)}"%>">
+     <input type="hidden" name="sessionid" value="<%="#{@sessionid}"%>">
+   </form>
+   <p>
+     <div>
+      <span><%="#{@response}"%></span>
+     </div>
+   </p>
+ </body>
+</html>
+

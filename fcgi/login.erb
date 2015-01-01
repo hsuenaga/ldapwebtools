@@ -1,0 +1,31 @@
+<html>
+ <head>
+   <title>Login</title>
+ </head>
+
+ <body>
+   <H1>Login</H1>
+   <form action="/admin/login" method="post">
+     <div>
+       <span>User ID</span>
+       <input type="text" name="userid" value="<%="#{@userid}"%>">
+     </div>
+     
+     <div>
+       <span>password</span>
+       <input type="password" name="password" value="<%="#{@password}"%>">
+     </div>
+     <div>
+       <input type="submit" value="Login">
+     </div>
+     <input type="hidden" name="nextpage" value="<%="#{pageid(@nextpage)}"%>">
+     <input type="hidden" name="sessionid" value="<%="#{@sessionid}"%>">
+   </form>
+   <p>
+     <div>
+      <span><%="#{@response}"%></span>
+     </div>
+   </p>
+ </body>
+</html>
+
