@@ -1,31 +1,46 @@
+<!DOCTYPE html>
 <html>
- <head>
-   <title>Login</title>
- </head>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="author" content="hsuenaga@floatlink.jp">
+    <link rel="stylesheet" type="text/css" href="admin.css">
+    <title>Login</title>
+  </head>
 
- <body>
-   <H1>Login</H1>
-   <form action="/admin/login" method="post">
-     <div>
-       <span>User ID</span>
-       <input type="text" name="userid" value="<%="#{@userid}"%>">
-     </div>
-     
-     <div>
-       <span>password</span>
-       <input type="password" name="password" value="<%="#{@password}"%>">
-     </div>
-     <div>
-       <input type="submit" value="Login">
-     </div>
-     <input type="hidden" name="nextpage" value="<%="#{pageid(@nextpage)}"%>">
-     <input type="hidden" name="sessionid" value="<%="#{@sessionid}"%>">
-   </form>
-   <p>
-     <div>
-      <span><%="#{@response}"%></span>
-     </div>
-   </p>
- </body>
+  <body>
+    <header>
+      <img src="https://www.floatlink.jp/img/Floatlink.jpg" alt="Floatlink.JP">
+    </header>
+
+    <section>
+      <h1>Login</h1>
+
+      <form action="/admin/login" method="post">
+        <div>
+          User ID
+          <input type="text" name="userid" value="<%=h"#{@userid}"%>">
+        </div>
+         
+        <div>
+          Password
+          <input type="password" name="password" value="<%=h"#{@password}"%>">
+        </div>
+
+        <input type="submit" value="Login">
+
+        <input type="hidden" name="nextpage" value="<%=h"#{pageid(@nextpage)}"%>">
+        <input type="hidden" name="sessionid" value="<%=h"#{@sessionid}"%>">
+      </form>
+    </section>
+
+    <section>
+      <%=h"#{@response}"%>
+    </section>
+
+    <footer>
+      (c) 2014 Floatlink.JP. allrights reverved.
+    </footer>
+  </body>
 </html>
 

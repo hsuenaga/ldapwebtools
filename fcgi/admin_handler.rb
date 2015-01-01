@@ -4,6 +4,7 @@ require 'syslog'
 require 'erb'
 require 'uri'
 require '/home/www/fcgi/admin_session.rb'
+include ERB::Util
 
 #
 # Base Class

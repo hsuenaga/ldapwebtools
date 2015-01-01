@@ -7,6 +7,7 @@ require 'timeout'
 require '/home/www/fcgi/admin_session.rb'
 require '/home/www/fcgi/admin_handler.rb'
 require '/home/www/fcgi/admin_ldap.rb'
+include ERB::Util
 
 #
 # Utilites

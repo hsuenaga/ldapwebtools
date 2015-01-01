@@ -10,12 +10,12 @@
      <div>
        <input type="submit" value="Logout">
      </div>
-     <input type="hidden" name="nextpage" value="<%="#{pageid(@nextpage)}"%>">
-     <input type="hidden" name="sessionid" value="<%="#{@sessionid}"%>">
+     <input type="hidden" name="nextpage" value="<%=h"#{pageid(@nextpage)}"%>">
+     <input type="hidden" name="sessionid" value="<%=h"#{@sessionid}"%>">
    </form>
    <p>
      <div>
-      <span><%="#{@response}"%></span>
+      <span><%=h"#{@response}"%></span>
      </div>
    </p>
  </body>
