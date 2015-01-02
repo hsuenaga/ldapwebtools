@@ -59,6 +59,26 @@ def getquery(request)
   query
 end
 
+def check_access(request)
+  referer = request.env['REFERER']
+  return true if referer == nil || referer == ""
+
+  referer_u = URI::parse(referer)
+  case referer_u.host
+  when "www.sakura-mochi.net"
+    true
+  when "sakura-mochi.net"
+    true
+  when "www.floatlink.jp"
+    true
+  when "floatlink.jp"
+    true
+  else
+    Syslog.err("CSRF: #{referer}")
+    false
+  end
+end
+
 def main()
   #
   # LDAP Handler
@@ -105,6 +125,10 @@ def main()
     # read request params
     resource = request.env['SCRIPT_NAME']
     query = getquery(request)
+    if check_access(request) == false
+      request.finish()
+      next
+    end
     Syslog.info("Request Received: \"#{resource}\"")
 
     # parse request
