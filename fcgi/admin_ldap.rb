@@ -1,11 +1,8 @@
 #!/usr/bin/env ruby
-require 'rubygems'
-require 'syslog'
-require 'digest/sha1'
-require 'base64'
-require 'securerandom'
-require 'ldap'
 
+#
+# LDAP Handling
+#
 class LDAPHandler
   attr_reader :error
   attr_writer :userid, :password
@@ -116,7 +113,6 @@ class LDAPHandler
       @connection.search(dn, scope, filter, attrs) do |entry|
         count += 1
         dn_found = entry.dn()
-        Syslog.info("Entry #{count}: #{entry.dn()}")
       end
     rescue LDAP::ResultError => e
       @error = e.to_s()
