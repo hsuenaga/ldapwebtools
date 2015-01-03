@@ -4,7 +4,6 @@ require 'syslog'
 require 'erb'
 require 'cgi'
 require 'uri'
-require '/home/www/fcgi/admin_session.rb'
 include ERB::Util
 
 #
@@ -12,127 +11,131 @@ include ERB::Util
 #
 class AdminHandler
   attr_reader :name
+  attr_accessor :debug
 
-  AUTH_WELCOME = "Welcome. Please input your User ID and Password"
-  AUTH_TIMEOUT = "Session Timeout. Please login again."
-  AUTH_ERROR_GENERIC = "NG.. Invalid User ID or Password"
-  AUTH_SUCCESS_STRING = "OK!! User ID Confirmed"
-  UPDATE_SUCCESS_STRING = "OK!! Password Updated"
-
+  QUERY_ACTION_CODE = "submit"
   COOKIE_AUTH_TOKEN = "auth_token"
 
-  def initialize(ldap, session, action, templates)
-    @name = "Default Handler"
+  class Context
+    attr_reader :myname, :query
+    attr_accessor :destination, :action, :guide, :debug
+
+    def initialize(myname, query, action, session, guide)
+      @myname = myname
+      @query = query
+      @session = session
+      @destination = :login
+      @action = action
+      @guide = guide
+      @cookie_issue = []
+      @cookie_recv = {}
+    end
+
+    def sessionid()
+      return nil unless @session
+      @session.sessionid()
+    end
+
+    def userid()
+      return nil unless @session
+      @session.userid
+    end
+
+    def password()
+      return nil unless @session
+      @session.password
+    end
+
+    def new_cookie(cookie)
+      @cookie_issue << cookie
+    end
+
+    def each_cookie(&block)
+      @cookie_issue.each do |cookie|
+        block.call(cookie)
+      end
+    end
+
+    def flush_cookie()
+      @cookie_issue = []
+    end
+
+    def new_session(db, userid, password)
+      @session = db.new_session(userid, password)
+      timeout = Time.now() + @session.timeout()
+      cookie = CGI::Cookie.new({'name' => COOKIE_AUTH_TOKEN,
+                                'value' => "#{@session}",
+                                'expires' => timeout,
+                                'domain' => @myname,
+                                'path' => "/admin/",
+                                'secure' => true})
+      new_cookie(cookie)
+      true
+    end
+
+    def close_session(db)
+      return ture unless @session
+      if @session.userid()
+        db.del_userid(@session.userid())
+      end
+      true
+    end
+  end
+
+  def initialize(ldap, session, action, template)
+    @name = nil
     @ldap = ldap
-    @templates = templates
-    @mydomain = ""
-    @nextpage = :init
-    @userid = ""
-    @password = ""
-    @password_new = ""
-    @password_retype = ""
-    @logout = ""
-    @response = ""
-    @cookie_issue = []
-    @cookie_recv = {}
+    @template = nil
+    @context = nil
+    @debug = false
 
     #
     # external state presentation name mapping
     #
-    @nextpage_map = action.action_map
-    @nextpage_map_inv = action.action_map_inv
+    @actionid_map = action.action_map
+    @actioncode_map = action.action_map_inv
 
     #
     # session control
     #
     @sessiondb = session
     @session = nil 
+
+    #
+    # template
+    #
+    @template = ERB.new(File.open(template).read())
+
+    #
+    # context
+    #
+    @context = nil
   end
 
   def log(message, *args)
-    Syslog.info(message, *args)
+    if @debug
+      printf(message, *args)
+      printf("\n")
+    else
+      Syslog.info(message, *args)
+    end
   end
 
   def log_err(message,*args)
-    Syslog.err(message, *args)
-  end
-
-  def clear_new_password()
-    @password_new = ""
-    @password_retype = ""
-  end
-
-  def clear_form()
-    @userid = ""
-    @password = ""
-    @session = ""
-    clear_new_password()
-  end
-
-  def finish()
-    clear_form()
-    @nextpage = :init
-  end
-
-  def set_cookie(cookie)
-    @cookie_issue << cookie
-  end
-
-  def check_userid()
-    if @userid == ""
-      @response = "NG.. Please input userid"
-      return false
+    if @debug
+      printf(message, *args)
+      printf("\n")
+    else
+      Syslog.err(message, *args)
     end
-    true
   end
 
-  def check_password()
-    if @password == ""
-      @response = "NG.. Please input old password"
-      return false
-    end
-    true
+  def parse_actioncode(actioncode)
+    @actioncode_map[actioncode]
   end
 
-  def check_new_password()
-    if @password_new == ""
-      @response = "NG.. Please input new password"
-      clear_new_password()
-      return false
-    end
-
-    if @password_retype == ""
-      @response = "NG.. Please retype new password"
-      clear_new_password()
-      return false
-    end
-
-    if @password_new != @password_retype
-      @response = "NG.. New password mismatch"
-      clear_new_password()
-      return false
-    end
-
-    if @password_new.size() < 8
-      @response = "NG.. Too short password (8-32 chars)"
-      clear_new_password()
-      return false
-    elsif @password_retype.size() > 32
-      @response = "NG.. Too long password (8-32 chars)"
-      clear_new_password()
-      return false
-    end
-    true
-  end
-
-  def parse_pageid(pageid)
-    return @nextpage_map_inv.default unless pageid
-    @nextpage_map_inv[pageid]
-  end
-
-  def pageid(nextpage)
-    return @nextpage_map.default unless nextpage
-    @nextpage_map[nextpage]
+  def actioncode(actionid)
+    @actionid_map[actionid]
   end
 
   def parse_subst(string, delim = ' ')
@@ -142,11 +145,13 @@ class AdminHandler
     args_pair = string.split(delim)
     args_pair.each do |pair|
       keyvalue = pair.split('=', 2)
+      key = URI.unescape(keyvalue[0])
       if keyvalue[1]
-        args[keyvalue[0]] = keyvalue[1]
+        value = URI.unescape(keyvalue[1])
       else
-        args[keyvalue[0]] = ""
+        value = ""
       end
+      args[key] = value
     end
 
     args
@@ -174,249 +179,51 @@ class AdminHandler
     parse_subst(rawstring, '&')
   end
 
-  def auth_token_issue()
-    @session = @sessiondb.new_session(@userid, @password)
-    log("New Session: %s", "#{@session}")
-    timeout = Time.new() + @session.timeout()
-    cookie = CGI::Cookie.new({'name' => COOKIE_AUTH_TOKEN,
-                              'value' => "#{@session}",
-                              'expires' => timeout,
-                              'domain' => "#{@myname}",
-                              'path' => "/admin/",
-                              'secure' => true})
-    set_cookie(cookie) if cookie
-  end
-
-  def auth_token_inval()
-    if @userid
-      @sessiondb.del_userid(@userid)
-    end
-  end
-
-  def auth_token_parse(request)
-    @cookie_recv = {}
-    source = request.env['HTTP_COOKIE']
-    return false if source == nil || source == "" 
-
-    @cookie_recv = parse_subst(request.env['HTTP_COOKIE'])
-    auth_token_raw = @cookie_recv[COOKIE_AUTH_TOKEN]
-    if auth_token_raw
-      auth_token = CGI::unescape(auth_token_raw)
-      log("Session ID: %s => %s", auth_token_raw, auth_token)
-      @session = @sessiondb.resume_session(auth_token)
-      if @session
-        @userid = @session.userid
-        @password = @session.password
-        log("Session Resumed")
-      else
-        @userid = ""
-        @password = ""
-        log("No Session Available")
-      end
-
-      return true
-    end
-    false
-  end
-
-  def handle(request)
+  def handle_request(request)
     # requested domain
-    @myname = request.env['HTTP_HOST']
+    myname = request.env['HTTP_HOST']
 
-    # resume auth
-    if auth_token_parse(request) == false
-      @userid = ""
-      @password = ""
-    end
-
+    # parse query string
     query = getquery(request)
-    if query.has_key?('nextpage')
-      @nextpage = parse_pageid(query['nextpage'])
-    else
-      @nextpage = :init
-    end
-#    sessionid = query['sessionid'] if query.has_key?('sessionid')
-#    if sessionid && sessionid != ""
-#      log("Session ID: %s", sessionid)
-#      @session = @sessiondb.resume_session(sessionid)
-#      if @session
-#        @userid = @session.userid
-#        @password = @session.password
-#      else
-#        log("Session Available")
-#        @session = nil
-#      end
-#    end
-    @userid = query['userid'] if query.has_key?('userid')
-    @password = query['password'] if query.has_key?('password')
-    @password_new = query['password_new'] if query.has_key?('password_new')
-    @password_retype = query['password_retype'] if query.has_key?('password_retype')
-    @logout = query['logout'] if query.has_key?('logout')
+
+    # parse action
+    action = @actioncode_map[query[QUERY_ACTION_CODE]]
+
+    # parse cookie
+    cookie_recv = parse_subst(request.env['HTTP_COOKIE'])
+
+    # resume session
+    session = @sessiondb.resume_session(cookie_recv[COOKIE_AUTH_TOKEN])
+
+    @context = Context.new(myname, query, action, session, "")
   end
 
-  def http_header()
+  def http_header(context)
     header = ""
     header += "Content-Type: text/html\r\n"
-    @cookie_issue.each do |cookie|
+    context.each_cookie do |cookie|
       header += "Set-Cookie: #{cookie}\r\n"
       log("Cookie-Issue: %s", cookie)
     end
     header += "\r\n"
-    @cookie_issue = []
+    context.flush_cookie()
 
     header
   end
 
-  def reply_html()
+  def reply_response(context)
+    log("GUIDE: #{context.guide}")
+    action = @actionid_map[context.action()]
     contents = ""
-    if !@templates[@nextpage]
-      return "ERROR: No Template(state: #{@nextpage}"
+    if !@template
+      return "ERROR: No Template for #{@name}.#{context.action()}"
     end
-    log("NextPage => #{@nextpage}")
-    contents += http_header()
-    contents += @templates[@nextpage].result(binding)
+    log("NextHandler => #{@name}")
+    contents += http_header(context)
+    contents += @template.result(binding)
+  end
 
-    File.open("/tmp/contents.tmp", "w") do |f|
-       f.puts contents
-    end
-
-    contents
+  def finish()
+    @context = nil
   end
 end # class AdminHandler
-
-#
-# Login Screen
-#
-class Login < AdminHandler
-
-  def initialize(ldap, session, action, template)
-    super(ldap, session, action, template)
-    @name = "Login"
-  end
-
-  def try_login()
-      @response = AUTH_ERROR_GENERIC
-
-      log("Checking Form(#{@nextpage})")
-      return false unless check_userid()
-      return false unless check_password()
-
-      log("Checking LDAP(#{@nextpage})")
-      if !@ldap.anon_bind()
-        log("LDAP: #{@ldap.error}")
-        return false
-      end
-
-      if !@ldap.is_user_exist?()
-        log("LDAP: #{@ldap.error}")
-        return false
-      end
-
-      if !@ldap.userid_bind()
-        log("LDAP: #{@ldap.error}")
-        return false
-      end
-
-      if !@ldap.unbind()
-        log("LDAP: #{@ldap.error}")
-        return false
-      end
-
-      @response = AUTH_SUCCESS_STRING
-      true
-  end
-
-  def handle(request)
-    super(request)
-
-    case @nextpage
-    when :init
-      log("Create New FORM(#{@nextpage})")
-      clear_form()
-      @response = AUTH_WELCOME
-      @nextpage = :login
-    when :login
-      @ldap.userid = @userid
-      @ldap.password = @password
-      if try_login()
-        auth_token_issue()
-        @nextpage = :authdone
-      end
-    else
-      log_err("Invalid State(#{@nextpage})")
-      clear_form()
-      @response = AUTH_TIMEOUT
-      @nextpage = :login
-    end
-
-    log("Response: #{@response}")
-  end
-end # Class Login < AdminHandler
-
-#
-# Password Screen
-#
-class UpdatePassword < AdminHandler
-  def initialize(ldap, session, action, template)
-    super(ldap, session, action, template)
-    @name = "UpdatePassword"
-  end
-
-  def try_update()
-    @response = AUTH_ERROR_GENERIC
-
-    log("Checking Form(#{@nextpage})")
-    return false unless check_userid()
-    return false unless check_password()
-    return false unless check_new_password()
-
-    log("Update LDAP(#{@nextpage})")
-    if !@ldap.userid_bind()
-      log("LDAP: #{@ldap.error}")
-      return false
-    end
-
-    if !@ldap.mod_userPassword(@password_new)
-      log("LDAP: #{@ldap.error}")
-      return false
-    end
-
-    if !@ldap.unbind()
-      log("LDAP: #{@ldap.error}")
-      return false
-    end
-
-    @response = UPDATE_SUCCESS_STRING
-    true
-  end
-
-  def handle(request)
-    super(request)
-
-    case @nextpage
-    when :authdone
-      log("Checking Form(#{@nextpage})")
-      @ldap.userid = @userid
-      @ldap.password = @password
-      if try_update()
-        clear_form()
-        @nextpage = :logout
-      end
-    when :logout
-      if @logout == "yes"
-        log("User Logout(#{@nextpage})")
-        auth_token_inval()
-        log("Refresh FORM(#{@nextpage})")
-        clear_form()
-        @response = AUTH_WELCOME
-        @nextpage = :login
-      end
-    else
-      log_err("Invalid State(#{@nextpage})")
-      clear_form()
-      @response = AUTH_TIMEOUT
-      @nextpage = :login
-    end
-    log("Response: #{@response}")
-  end
-end # Class UpdatePassword < AdminHandler

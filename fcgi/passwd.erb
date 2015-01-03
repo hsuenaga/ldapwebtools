@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="robots" content="NOINDEX,NOFOLLOW">
 	<meta name="author" content="hsuenaga@floatlink.jp">
-	<link rel="stylesheet" type="text/css" href="https://<%=h "#{@myname}"%>/css/admin.css">
+	<link rel="stylesheet" type="text/css" href="https://<%=h "#{@context.myname}"%>/css/admin.css">
 	<title>Mail Password Update</title>
     </head>
 
@@ -17,15 +17,15 @@
 	    <h1>Update Mail Password</h1>
 
 	    <p>
-		<%=h"#{@response}"%>
+		<%=h"#{@context.guide}"%>
 	    </p>
 
-	    <form action="/admin/password" method="post">
+	    <form action="/admin/<%=h"#{@name}"%>" method="post">
 		<div class="input_field">
 		    <p>
 			New Password(8-32 chars)
 		    </p>
-		    <input type="password" name="password_new" value="<%=h"#{@password_new}"%>">
+		    <input type="password" name="password" value="<%=h"#{@password}"%>">
 		</div>
 
 		<div class="input_field">
@@ -35,10 +35,9 @@
 		    <input type="password" name="password_retype" value="<%=h"#{@password_retype}"%>">
 		</div>
 
-		<input class="input_button" type="submit" value="OK">
+		<input class="input_button" type="submit" value="<%="#{action}"%>">
 
-		<input type="hidden" name="nextpage" value="<%=h"#{pageid(@nextpage)}"%>">
-		<input type="hidden" name="sessionid" value="<%=h"#{@session}"%>">
+		<input type="hidden" name="sessionid" value="<%=h"#{@context.sessionid}"%>">
 	    </form>
 	</section>
 

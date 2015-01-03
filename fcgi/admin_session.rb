@@ -7,11 +7,11 @@ class AdminSession
   attr_reader :userid, :password, :sessionid, :timestamp, :timeout
 
   def initialize(userid, password, timeout)
-    @userid = userid
-    @password = password
-    @sessionid = _new_sessionid()
+    @userid = userid.to_s()
+    @password = password.to_s()
     @timestamp = Time.now()
-    @timeout = timeout
+    @timeout = timeout.to_i()
+    @sessionid = _new_sessionid()
   end
 
   def _new_sessionid()
@@ -22,10 +22,6 @@ class AdminSession
 
   def self.cookie()
     "#{Base64.encode64(SecureRandom.random_bytes(16)).chomp!}"
-  end
-
-  def self.simple_cookie()
-    "#{SecureRandom.hex(16)}"
   end
 
   def to_s()
@@ -61,7 +57,8 @@ class AdminSessionDB
 
   def resume_session(sessionid)
     timeout_session()
-    @db.find do |session|
+    return unless sessionid
+    session = @db.find do |session|
       session.sessionid == sessionid
     end
   end
@@ -84,16 +81,36 @@ end
 class AdminSessionActionID
   attr_reader :action_map, :action_map_inv
 
-  def initialize()
-    @action_map = {
-      :init => AdminSession::simple_cookie(),
-      :login => AdminSession::simple_cookie(),
-      :authdone => AdminSession::simple_cookie(),
-      :logout => AdminSession::simple_cookie(),
-      :nomatch => AdminSession::simple_cookie()
-    }
+  def initialize(actions, debug = false)
+    @simple_cookie_map = {}
+    @action_map = {}
+    @action_map_inv = nil
+
+    # naming
+    @action_map[:nomatch] = _simple_cookie()
+    actions.each do |id|
+      if debug
+        @action_map[id] = "#{id}"
+      else
+        @action_map[id] = _simple_cookie()
+      end
+    end
     @action_map.default = @action_map[:nomatch]
     @action_map_inv = @action_map.invert()
     @action_map_inv.default = :nomatch
+
+  end
+
+  def set_route_map(route_map)
+    @route_map = {}
+  end
+
+  def _simple_cookie()
+    cookie = nil
+    begin
+      cookie = "#{SecureRandom.hex(8)}"
+    end while @simple_cookie_map.has_key?(cookie)
+    @simple_cookie_map[cookie] = true
+    cookie
   end
 end
