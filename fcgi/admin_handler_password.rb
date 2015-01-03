@@ -2,7 +2,7 @@
 #
 # Password Screen
 #
-class UpdatePassword < AdminHandler
+class Passwd < AdminHandler
   PASSWD_WELCOME = "Please input new password"
   AUTH_ERROR_SESSION = "NG.. Session Expired"
   FORM_ERROR_PASSWD = "NG.. Missing Password"
@@ -23,9 +23,6 @@ class UpdatePassword < AdminHandler
   end
 
   def check_form()
-    @password = @context.query['password']
-    @password_retype = @context.query['password_retype']
-
     if @password == nil || @password == ""
       @context.guide = FORM_ERROR_PASSWD
       return false
@@ -81,11 +78,19 @@ class UpdatePassword < AdminHandler
       return @context
     end
 
+    @password = @context.query['password']
+    @password_retype = @context.query['password_retype']
+    if @password == "" && @password_retype == ""
+      @context.destination = :passwd
+      @context.action = :init
+      return @context
+    end
+
     @ldap.userid = userid
     @ldap.password = password
     if try_update()
       clear_form()
-      @context.destination = :login
+      @context.destination = :menu
       @context.action = :init
     else
       clear_form()

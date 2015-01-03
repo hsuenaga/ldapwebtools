@@ -14,22 +14,20 @@ class Login < AdminHandler
     super(ldap, session, action, template)
     @name = "login"
     @userid = ""
-    @passwd = ""
+    @password = ""
   end
 
   def clear_form()
     @userid = ""
-    @passwd = ""
+    @password = ""
   end
 
   def check_form()
-    @userid = @context.query['userid']
-    @passwd = @context.query['password']
     if @userid == nil || @userid == ""
       @context.guide = FORM_ERROR_USERID
       return false
     end
-    if @passwd == nil || @passwd == ""
+    if @password == nil || @password == ""
       @context.guide = FORM_ERROR_PASSWD
       return false
     end
@@ -70,19 +68,19 @@ class Login < AdminHandler
   def handle_request(request)
     super(request)
 
-    userid = @context.query['userid']
-    password = @context.query['password']
-    if userid == nil && password == nil
+    @userid = @context.query['userid']
+    @password = @context.query['password']
+    if @userid == "" && @password == ""
       @context.destination = :login
       @context.action = :init
       return @context
     end
 
-    @ldap.userid = userid
-    @ldap.password = password
+    @ldap.userid = @userid
+    @ldap.password = @password
     if try_login()
-      @context.new_session(@sessiondb, userid, password)
-      @context.destination = :passwd
+      @context.new_session(@sessiondb, @userid, @password)
+      @context.destination = :menu
       @context.action = :init
     else
       @context.destination = :login

@@ -185,6 +185,7 @@ class AdminHandler
 
     # parse query string
     query = getquery(request)
+    query.default = ""
 
     # parse cookie
     cookie_recv = parse_subst(request.env['HTTP_COOKIE'])

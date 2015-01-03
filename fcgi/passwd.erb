@@ -1,49 +1,49 @@
 <!DOCTYPE html>
 <html>
     <head>
-	<meta charset="UTF-8">
-	<meta name="robots" content="NOINDEX,NOFOLLOW">
-	<meta name="author" content="hsuenaga@floatlink.jp">
-	<link rel="stylesheet" type="text/css" href="https://<%=h "#{@context.myname}"%>/css/admin.css">
-	<title>Mail Password Update</title>
+        <meta charset="UTF-8">
+        <meta name="robots" content="NOINDEX,NOFOLLOW">
+        <meta name="author" content="hsuenaga@floatlink.jp">
+        <link rel="stylesheet" type="text/css" href="https://<%=h "#{@context.myname}"%>/css/admin.css">
+        <title>Mail Password Update</title>
     </head>
 
     <body>
-	<header>
-	    <img src="https://www.floatlink.jp/img/FloatlinkSmall.jpg" alt="Floatlink.JP">
-	</header>
+        <header>
+            <img src="https://www.floatlink.jp/img/FloatlinkSmall.jpg" alt="Floatlink.JP">
+        </header>
 
-	<section class="input_form">
-	    <h1>Update Mail Password</h1>
+        <section class="input_form">
+            <h1>Update Mail Password</h1>
 
-	    <p>
-		<%=h"#{@context.guide}"%>
-	    </p>
+            <p>
+                <%=h"#{@context.guide}"%>
+            </p>
 
-	    <form action="/admin/<%=h"#{@name}"%>" method="post">
-		<div class="input_field">
-		    <p>
-			New Password(8-32 chars)
-		    </p>
-		    <input type="password" name="password" value="<%=h"#{@password}"%>">
-		</div>
+            <form action="/admin/<%=h"#{@name}"%>" method="post">
+                <div class="input_field">
+                    <p>
+                        New Password(8-32 chars)
+                    </p>
+                    <input type="password" name="password" value="<%=h"#{@password}"%>">
+                </div>
 
-		<div class="input_field">
-		    <p>
-			New Password(Retype)
-		    </p>
-		    <input type="password" name="password_retype" value="<%=h"#{@password_retype}"%>">
-		</div>
+                <div class="input_field">
+                    <p>
+                        New Password(Retype)
+                    </p>
+                    <input type="password" name="password_retype" value="<%=h"#{@password_retype}"%>">
+                </div>
 
-		<input class="input_button" type="submit" value="MODIFY">
+                <input class="input_button" type="submit" value="MODIFY">
 
-		<input type="hidden" name="sessionid" value="<%=h"#{@context.sessionid}"%>">
-	    </form>
-	</section>
+                <input type="hidden" name="sessionid" value="<%=h"#{@context.sessionid}"%>">
+            </form>
+        </section>
 
-	<footer>
-	    (c) 2014 Floatlink.JP. Allrights reverved.
-	</footer>
+        <footer>
+            (c) 2014 Floatlink.JP. Allrights reverved.
+        </footer>
     </body>
 </html>
 

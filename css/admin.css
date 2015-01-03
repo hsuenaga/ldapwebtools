@@ -53,6 +53,14 @@ section.input_form form {
 	margin-right: 0%;
 }
 
+section.input_form form.menu {
+	margin-top: 0%;
+	margin-bottom: 0%;
+	margin-left: 0%;
+	margin-right: 0%;
+	width: 70%;
+}
+
 section.input_form div.input_field {
 	min-width: 100%;
 }
@@ -77,6 +85,18 @@ section.input_form input.input_button {
 }
 
 section.input_form input.input_button:hover {
+	background: #999999;
+}
+
+section.input_form input.menu_button {
+	margin-top: 0.5em;
+	width: 100%;
+	background: #fff;
+	border: solid thin #999999;
+	cursor: pointer;
+}
+
+section.input_form input.menu_button:hover {
 	background: #999999;
 }
 

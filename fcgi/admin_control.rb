@@ -11,6 +11,7 @@ require 'admin_session.rb'
 require 'admin_handler.rb'
 require 'admin_handler_login.rb'
 require 'admin_handler_password.rb'
+require 'admin_handler_menu.rb'
 require 'admin_ldap.rb'
 include ERB::Util
 
@@ -47,8 +48,12 @@ class AdminControl
     raise RuntimeError unless @login
 
     template = File.join(load_path, "passwd.erb")
-    @passwd = UpdatePassword.new(@ldap, @session, @action, template)
+    @passwd = Passwd.new(@ldap, @session, @action, template)
     raise RuntimeError unless @passwd
+
+    template = File.join(load_path, "menu.erb")
+    @menu = Menu.new(@ldap, @session, @action, template)
+    raise RuntimeError unless @menu
 
     @debug = debug
     @login.debug = @debug
@@ -106,6 +111,7 @@ class AdminControl
     return false unless  check_access(request)
 
     # parse request
+    error = false
     resource = request.env['SCRIPT_NAME']
     log("Request Received: \"#{resource}\"")
     case resource
@@ -113,17 +119,24 @@ class AdminControl
       handler = @login
     when /^\/admin\/passwd$/
       handler = @passwd
+    when /^\/admin\/menu$/
+      handler = @menu
     else 
       handler = @login
+      error = true
     end
 
     log("Handler: #{resource} => #{handler.name()}")
     context = handler.handle_request(request)
     if context == nil
       log_err("No Context Received")
-      return false
+      error = true
     end
     handler.finish()
+    if error
+      context.destination = :login
+      context.action = :init
+    end
     reflect(request, context)
   end
 
@@ -134,6 +147,8 @@ class AdminControl
       responder = @login
     when :passwd
       responder = @passwd
+    when :menu
+      responder = @menu
     else
       log_err("No Destination \"%s\" found. defaulting to login",
         context.destination)
