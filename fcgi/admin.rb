@@ -20,45 +20,6 @@ def debug_env(request)
   request.out.print("</pre></div>\n")
 end
 
-def getquery(request)
-  limit = 1024
-
-  case request.env['REQUEST_METHOD']
-  when /(GET|PUT)/
-    rawstring = request.env['QUERY_STRING']
-  when 'POST'
-    lenstr = request.env['CONTENT_LENGTH']
-    return {} unless lenstr
-    len = lenstr.to_i()
-    reutrn {} if len > limit
-    begin
-      timeout(10) do
-        rawstring = request.in.read(len)
-      end
-    rescue Timeout::Error
-      rawstring = nil
-    end
-  else
-    rawstring = nil
-  end
-  return {} unless rawstring
-  return {} if rawstring.size == 0
-  rawstring = URI.unescape(rawstring)
-
-  query = {}
-  query_pair = rawstring.split('&')
-  query_pair.each do |pair|
-    keyvalue = pair.split('=', 2)
-    if keyvalue[1]
-      query[keyvalue[0]] = keyvalue[1]
-    else
-      query[keyvalue[0]] = ""
-    end
-  end
-
-  query
-end
-
 def check_access(request)
   referer = request.env['REFERER']
   return true if referer == nil || referer == ""
@@ -122,39 +83,44 @@ def main()
   # Main loop
   #
   FCGI.each_request do |request|
-    # read request params
-    resource = request.env['SCRIPT_NAME']
-    query = getquery(request)
-    if check_access(request) == false
+    begin
+    timeout(10) do
+      Syslog.info("Incoming Access")
+      # read request params
+      if check_access(request) == false
+        request.finish()
+        next
+      end
+
+      # parse request
+      resource = request.env['SCRIPT_NAME']
+      Syslog.info("Request Received: \"#{resource}\"")
+      case resource
+      when /^\/admin\/login$/
+        handler = login
+      when /^\/admin\/password$/
+        handler = update_password
+      else 
+        handler = login
+      end
+      Syslog.info("Handler: #{resource} => #{handler.name()}")
+      handler.handle(request)
+
+      # generate response
+      request.out.print(handler.reply_html())
+#      debug_env(request)
+      handler.finish()
+      Syslog.info("Session done.")
+    end
+    rescue => e
+      raise e
+    ensure
       request.finish()
-      next
     end
-    Syslog.info("Request Received: \"#{resource}\"")
-
-    # parse request
-    case resource
-    when /^\/admin\/login$/
-      handler = login
-    when /^\/admin\/password$/
-      handler = update_password
-    else 
-      handler = login
-    end
-    Syslog.info("Handler: #{resource} => #{handler.name()}")
-    handler.handle(query)
-
-    # generate response
-    request.out.print(handler.http_header())
-    request.out.print(handler.reply_html())
-#   debug_env(request)
-    handler.finish()
-    request.finish()
-
-    Syslog.info("Session done.")
   end
 end
 
-Syslog.open("update_password.rb",
+Syslog.open("FastCGI.Admin",
   Syslog::LOG_PID|Syslog::LOG_CONS, Syslog::LOG_DAEMON)
 begin
   Syslog.info("Starting FastCGI server")

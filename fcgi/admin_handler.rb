@@ -2,6 +2,7 @@
 require 'rubygems'
 require 'syslog'
 require 'erb'
+require 'cgi'
 require 'uri'
 require '/home/www/fcgi/admin_session.rb'
 include ERB::Util
@@ -13,14 +14,18 @@ class AdminHandler
   attr_reader :name
 
   AUTH_WELCOME = "Welcome. Please input your User ID and Password"
+  AUTH_TIMEOUT = "Session Timeout. Please login again."
   AUTH_ERROR_GENERIC = "NG.. Invalid User ID or Password"
   AUTH_SUCCESS_STRING = "OK!! User ID Confirmed"
   UPDATE_SUCCESS_STRING = "OK!! Password Updated"
+
+  COOKIE_AUTH_TOKEN = "auth_token"
 
   def initialize(ldap, session, action, templates)
     @name = "Default Handler"
     @ldap = ldap
     @templates = templates
+    @mydomain = ""
     @nextpage = :init
     @userid = ""
     @password = ""
@@ -28,6 +33,8 @@ class AdminHandler
     @password_retype = ""
     @logout = ""
     @response = ""
+    @cookie_issue = []
+    @cookie_recv = {}
 
     #
     # external state presentation name mapping
@@ -39,7 +46,7 @@ class AdminHandler
     # session control
     #
     @sessiondb = session
-    @sessionid = ""
+    @session = nil 
   end
 
   def log(message, *args)
@@ -58,13 +65,17 @@ class AdminHandler
   def clear_form()
     @userid = ""
     @password = ""
-    @sessionid = ""
+    @session = ""
     clear_new_password()
   end
 
   def finish()
     clear_form()
     @nextpage = :init
+  end
+
+  def set_cookie(cookie)
+    @cookie_issue << cookie
   end
 
   def check_userid()
@@ -124,22 +135,118 @@ class AdminHandler
     @nextpage_map[nextpage]
   end
 
-  def handle(query)
+  def parse_subst(string, delim = ' ')
+    return {} if string == nil || string == ""
+
+    args = {}
+    args_pair = string.split(delim)
+    args_pair.each do |pair|
+      keyvalue = pair.split('=', 2)
+      if keyvalue[1]
+        args[keyvalue[0]] = keyvalue[1]
+      else
+        args[keyvalue[0]] = ""
+      end
+    end
+
+    args
+  end
+
+  def getquery(request)
+    limit = 1024
+
+    case request.env['REQUEST_METHOD']
+    when /(GET|PUT)/
+      rawstring = request.env['QUERY_STRING']
+    when 'POST'
+      lenstr = request.env['CONTENT_LENGTH']
+      return {} unless lenstr
+      len = lenstr.to_i()
+      reutrn {} if len > limit
+      rawstring = request.in.read(len)
+    else
+      rawstring = nil
+    end
+    return {} unless rawstring
+    return {} if rawstring.size == 0
+    rawstring = URI.unescape(rawstring)
+
+    parse_subst(rawstring, '&')
+  end
+
+  def auth_token_issue()
+    @session = @sessiondb.new_session(@userid, @password)
+    log("New Session: %s", "#{@session}")
+    timeout = Time.new() + @session.timeout()
+    cookie = CGI::Cookie.new({'name' => COOKIE_AUTH_TOKEN,
+                              'value' => "#{@session}",
+                              'expires' => timeout,
+                              'domain' => "#{@myname}",
+                              'path' => "/admin/",
+                              'secure' => true})
+    set_cookie(cookie) if cookie
+  end
+
+  def auth_token_inval()
+    if @userid
+      @sessiondb.del_userid(@userid)
+    end
+  end
+
+  def auth_token_parse(request)
+    @cookie_recv = {}
+    source = request.env['HTTP_COOKIE']
+    return false if source == nil || source == "" 
+
+    @cookie_recv = parse_subst(request.env['HTTP_COOKIE'])
+    auth_token_raw = @cookie_recv[COOKIE_AUTH_TOKEN]
+    if auth_token_raw
+      auth_token = CGI::unescape(auth_token_raw)
+      log("Session ID: %s => %s", auth_token_raw, auth_token)
+      @session = @sessiondb.resume_session(auth_token)
+      if @session
+        @userid = @session.userid
+        @password = @session.password
+        log("Session Resumed")
+      else
+        @userid = ""
+        @password = ""
+        log("No Session Available")
+      end
+
+      return true
+    end
+    false
+  end
+
+  def handle(request)
+    # requested domain
+    @myname = request.env['HTTP_HOST']
+
+    # resume auth
+    if auth_token_parse(request) == false
+      @userid = ""
+      @password = ""
+    end
+
+    query = getquery(request)
     if query.has_key?('nextpage')
       @nextpage = parse_pageid(query['nextpage'])
     else
       @nextpage = :init
     end
-    @sessionid = query['sessionid'] if query.has_key?('sessionid')
-    if @sessionid && @sessionid != ""
-      session = @sessiondb.resume_session(@sessionid)
-      if session
-        @userid = session.userid
-        @password = session.password
-      else
-        @sessionid = nil
-      end
-    end
+#    sessionid = query['sessionid'] if query.has_key?('sessionid')
+#    if sessionid && sessionid != ""
+#      log("Session ID: %s", sessionid)
+#      @session = @sessiondb.resume_session(sessionid)
+#      if @session
+#        @userid = @session.userid
+#        @password = @session.password
+#      else
+#        log("Session Available")
+#        @session = nil
+#      end
+#    end
     @userid = query['userid'] if query.has_key?('userid')
     @password = query['password'] if query.has_key?('password')
     @password_new = query['password_new'] if query.has_key?('password_new')
@@ -150,15 +257,30 @@ class AdminHandler
   def http_header()
     header = ""
     header += "Content-Type: text/html\r\n"
+    @cookie_issue.each do |cookie|
+      header += "Set-Cookie: #{cookie}\r\n"
+      log("Cookie-Issue: %s", cookie)
+    end
     header += "\r\n"
+    @cookie_issue = []
+
+    header
   end
 
   def reply_html()
+    contents = ""
     if !@templates[@nextpage]
       return "ERROR: No Template(state: #{@nextpage}"
     end
     log("NextPage => #{@nextpage}")
-    @templates[@nextpage].result(binding)
+    contents += http_header()
+    contents += @templates[@nextpage].result(binding)
+
+    File.open("/tmp/contents.tmp", "w") do |f|
+       f.puts contents
+    end
+
+    contents
   end
 end # class AdminHandler
 
@@ -166,6 +288,7 @@ end # class AdminHandler
 # Login Screen
 #
 class Login < AdminHandler
+
   def initialize(ldap, session, action, template)
     super(ldap, session, action, template)
     @name = "Login"
@@ -203,8 +326,8 @@ class Login < AdminHandler
       true
   end
 
-  def handle(query)
-    super(query)
+  def handle(request)
+    super(request)
 
     case @nextpage
     when :init
@@ -216,13 +339,13 @@ class Login < AdminHandler
       @ldap.userid = @userid
       @ldap.password = @password
       if try_login()
+        auth_token_issue()
         @nextpage = :authdone
-        @sessionid = @sessiondb.new_session(@userid, @password)
       end
     else
       log_err("Invalid State(#{@nextpage})")
-      @response = AUTH_ERROR_GENERIC
       clear_form()
+      @response = AUTH_TIMEOUT
       @nextpage = :login
     end
 
@@ -267,8 +390,8 @@ class UpdatePassword < AdminHandler
     true
   end
 
-  def handle(query)
-    super(query)
+  def handle(request)
+    super(request)
 
     case @nextpage
     when :authdone
@@ -282,14 +405,16 @@ class UpdatePassword < AdminHandler
     when :logout
       if @logout == "yes"
         log("User Logout(#{@nextpage})")
+        auth_token_inval()
         log("Refresh FORM(#{@nextpage})")
         clear_form()
         @response = AUTH_WELCOME
         @nextpage = :login
       end
     else
+      log_err("Invalid State(#{@nextpage})")
       clear_form()
-      @response = "NG.. Invalid State(#{@nextpage})"
+      @response = AUTH_TIMEOUT
       @nextpage = :login
     end
     log("Response: #{@response}")
