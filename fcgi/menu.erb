@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="robots" content="NOINDEX,NOFOLLOW">
+        <meta name="author" content="hsuenaga@floatlink.jp">
+        <link rel="stylesheet" type="text/css" href="https://<%="#{@context.myname}"%>/css/admin.css">
+        <title>Login</title>
+    </head>
+
+    <body>
+        <header>
+            <img src="https://<%="#{@context.myname}"%>/img/FloatlinkSmall.jpg" alt="Floatlink.JP">
+        </header>
+
+        <section class="input_form">
+            <h1>MENU</h1>
+
+            <p>
+                <%=h"#{@context.guide}"%>
+            </p>
+
+            <form class="menu" action="/admin/passwd" method="post">
+                <input class="menu_button" type="submit" value="ChangePassword">
+            </form>
+
+            <form class="menu" action="/admin/logout" method="post">
+                <input class="menu_button" type="submit" value="LOGOUT">
+            </form>
+        </section>
+
+        <footer>
+            (c) 2014 Floatlink.JP. Allrights reverved.
+        </footer>
+    </body>
+</html>
+
