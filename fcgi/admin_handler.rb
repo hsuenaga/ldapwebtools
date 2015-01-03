@@ -20,12 +20,12 @@ class AdminHandler
     attr_reader :myname, :query
     attr_accessor :destination, :action, :guide, :debug
 
-    def initialize(myname, query, action, session, guide)
+    def initialize(myname, query, session, guide)
       @myname = myname
       @query = query
       @session = session
       @destination = :login
-      @action = action
+      @action = :init
       @guide = guide
       @cookie_issue = []
       @cookie_recv = {}
@@ -186,16 +186,13 @@ class AdminHandler
     # parse query string
     query = getquery(request)
 
-    # parse action
-    action = @actioncode_map[query[QUERY_ACTION_CODE]]
-
     # parse cookie
     cookie_recv = parse_subst(request.env['HTTP_COOKIE'])
 
     # resume session
     session = @sessiondb.resume_session(cookie_recv[COOKIE_AUTH_TOKEN])
 
-    @context = Context.new(myname, query, action, session, "")
+    @context = Context.new(myname, query, session, "")
   end
 
   def http_header(context)

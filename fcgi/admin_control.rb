@@ -135,7 +135,8 @@ class AdminControl
     when :passwd
       responder = @passwd
     else
-      log_err("No Destination found. defaulting to login")
+      log_err("No Destination \"%s\" found. defaulting to login",
+        context.destination)
       responder = @login
       context.action = :init
     end

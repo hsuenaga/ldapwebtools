@@ -70,24 +70,23 @@ class Login < AdminHandler
   def handle_request(request)
     super(request)
 
-    case @context.action
-    when :login
-      userid = @context.query['userid']
-      password = @context.query['password']
-
-      @ldap.userid = userid
-      @ldap.password = password
-      if try_login()
-        @context.new_session(@sessiondb, userid, password)
-        @context.destination = :passwd
-        @context.action = :init
-      end
-    else
-      log_err("Invalid Method #{@name}.#{@context.action}")
-      clear_form()
-      @context.guide = AUTH_TIMEOUT
+    userid = @context.query['userid']
+    password = @context.query['password']
+    if userid == nil && password == nil
+      @context.destination = :login
       @context.action = :init
-      log("Defaulting to #{@name}.#{@context.action}")
+      return @context
+    end
+
+    @ldap.userid = userid
+    @ldap.password = password
+    if try_login()
+      @context.new_session(@sessiondb, userid, password)
+      @context.destination = :passwd
+      @context.action = :init
+    else
+      @context.destination = :login
+      @context.action = :login
     end
 
     @context
@@ -101,11 +100,11 @@ class Login < AdminHandler
       log("Create New FORM(#{@name}.#{@context.action})")
       clear_form()
       @context.guide = AUTH_WELCOME
-      @context.action = :login
+    when :login
+      log("Retry FORM(#{@name}.#{@context.action})")
     when :error
       log("Create Error FORM(#{@name}.#{@context.action})")
       clear_form()
-      @context.action = :login
     end
 
     super(context)

@@ -43,7 +43,7 @@ class UpdatePassword < AdminHandler
   end
 
   def try_update()
-    @response = AUTH_ERROR_SESSION
+    @context.guide = AUTH_ERROR_SESSION
 
     log("Checking Form(#{@name})")
     return false unless check_form()
@@ -64,7 +64,7 @@ class UpdatePassword < AdminHandler
       return false
     end
 
-    @response = UPDATE_SUCCESS_STRING
+    @context.guide = UPDATE_SUCCESS_STRING
     true
   end
 
@@ -81,31 +81,17 @@ class UpdatePassword < AdminHandler
       return @context
     end
 
-    case @context.action
-    when :modify
-      @ldap.userid = userid
-      @ldap.password = password
-      if try_update()
-        clear_form()
-        @context.destination = :logout
-        @context.action = :init
-      end
-    when :logout
-      if @logout == "yes"
-        log("User Logout(#{@nextpage})")
-        auth_token_inval()
-        log("Refresh FORM(#{@nextpage})")
-        clear_form()
-        @response = AUTH_WELCOME
-        @nextpage = :login
-      end
-    else
-      log_err("Invalid State(#{@nextpage})")
+    @ldap.userid = userid
+    @ldap.password = password
+    if try_update()
       clear_form()
-      @response = AUTH_TIMEOUT
-      @nextpage = :login
+      @context.destination = :login
+      @context.action = :init
+    else
+      clear_form()
+      @context.destination = :passwd
+      @context.action = :modify
     end
-    log("Response: #{@response}")
 
     @context
   end
