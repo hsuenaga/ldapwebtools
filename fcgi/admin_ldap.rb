@@ -12,6 +12,15 @@ class LDAPHandler
   DUPLICATED_ENTRY_STRING = "Duplicated User ID Found"
   BROKEN_RESPONSE_STRING = "Broken Server Response"
 
+  class LDAPUser
+    attr_reader :dn, :maildrop, :mailaddr
+    def initialize(entry)
+      @dn = entry.dn
+      @maildrop = entry.vals('maildrop')
+      @mailaddr = entry.vals('mailacceptinggeneralid')
+    end
+  end
+
   def initialize()
     @connection = LDAP::Conn.new('localhost', LDAP::LDAP_PORT)
     if !@connection
@@ -98,12 +107,12 @@ class LDAPHandler
     true
   end
 
-  def is_user_exist?()
+  def search_user()
     dn = userid2dn(@userid)
     dn_found = nil
     scope = LDAP::LDAP_SCOPE_BASE
     filter = "(objectClass=mailAccount)"
-    attrs = ['dn']
+    attrs = ['dn', 'maildrop', 'mailacceptinggeneralid']
 
     return false unless dn 
     return false unless default_bind()
@@ -112,7 +121,7 @@ class LDAPHandler
     begin
       @connection.search(dn, scope, filter, attrs) do |entry|
         count += 1
-        dn_found = entry.dn()
+        dn_found = LDAPUser.new(entry)
       end
     rescue LDAP::ResultError => e
       @error = e.to_s()
@@ -129,12 +138,20 @@ class LDAPHandler
       return false
     end
 
-    if !dn_found || dn_found != dn
+    if !dn_found || dn_found.dn != dn
       @error = BROKEN_RESPONSE_STRING
       return false
     end
 
-    return dn
+    return dn_found
+  end
+  
+  def serialize(userinfo)
+    string = ""
+    string += "DN: #{userinfo.dn}\n"
+    string += "MAIL ADDRESS: #{userinfo.mailaddr}\n"
+    string += "FORWARD:#{userinfo.maildrop}\n"
+    string
   end
 
   def mod_userPassword(password_new)

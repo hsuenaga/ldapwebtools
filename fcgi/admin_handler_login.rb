@@ -46,10 +46,12 @@ class Login < AdminHandler
         return false
       end
 
-      if !@ldap.is_user_exist?()
+      entry = @ldap.search_user()
+      if !entry
         log("LDAP: #{@ldap.error}")
         return false
       end
+      @context.user_info = @ldap.serialize(entry)
 
       if !@ldap.userid_bind()
         log("LDAP: #{@ldap.error}")

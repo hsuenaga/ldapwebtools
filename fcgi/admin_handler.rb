@@ -18,7 +18,7 @@ class AdminHandler
 
   class Context
     attr_reader :myname, :query
-    attr_accessor :destination, :action, :guide, :debug
+    attr_accessor :destination, :action, :guide, :debug, :user_info
 
     def initialize(myname, query, session, guide)
       @myname = myname
@@ -29,6 +29,7 @@ class AdminHandler
       @guide = guide
       @cookie_issue = []
       @cookie_recv = {}
+      @user_info = nil
     end
 
     def sessionid()
@@ -148,14 +149,6 @@ class AdminHandler
     else
       Syslog.err(message, *args)
     end
-  end
-
-  def parse_actioncode(actioncode)
-    @actioncode_map[actioncode]
-  end
-
-  def actioncode(actionid)
-    @actionid_map[actionid]
   end
 
   def parse_subst(string, delim = ' ')
