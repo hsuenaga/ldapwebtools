@@ -68,6 +68,8 @@ class Login < AdminHandler
   def handle_request(request)
     super(request)
 
+    @context.close_session(@sessiondb)
+
     @userid = @context.query['userid']
     @password = @context.query['password']
     if @userid == "" && @password == ""

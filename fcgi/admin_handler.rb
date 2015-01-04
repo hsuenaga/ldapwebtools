@@ -70,14 +70,26 @@ class AdminHandler
                                 'path' => "/admin/",
                                 'secure' => true})
       new_cookie(cookie)
+      AdminHandler::log("Session \"%s\" open, uid \"%s\"",
+        "#{@session}", userid)
       true
     end
 
     def close_session(db)
-      return ture unless @session
+      return true unless @session
       if @session.userid()
+        cookie = CGI::Cookie.new({'name' => COOKIE_AUTH_TOKEN,
+                                  'value' => "#{@session}",
+                                  'expires' => @session.timestamp,
+                                  'domain' => @myname,
+                                  'path' => "/admin/",
+                                  'secure' => true})
+        new_cookie(cookie)
+        AdminHandler::log("Session \"%s\" close, uid \"%s\"",
+          "#{@session}", userid)
         db.del_userid(@session.userid())
       end
+      @session = nil
       true
     end
   end
@@ -113,6 +125,10 @@ class AdminHandler
   end
 
   def log(message, *args)
+    AdminHandler::log(message, *args)
+  end
+
+  def self.log(message, *args)
     if @debug
       printf(message, *args)
       printf("\n")
@@ -121,7 +137,11 @@ class AdminHandler
     end
   end
 
-  def log_err(message,*args)
+  def log_err(message, *args)
+    AdminHandler::log_err(message, *args)
+  end
+
+  def self.log_err(message,*args)
     if @debug
       printf(message, *args)
       printf("\n")

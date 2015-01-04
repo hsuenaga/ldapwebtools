@@ -134,6 +134,7 @@ class AdminControl
     end
     handler.finish()
     if error
+      context.close_session(@session)
       context.destination = :login
       context.action = :init
     end
