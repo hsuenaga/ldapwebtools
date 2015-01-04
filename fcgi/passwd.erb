@@ -21,23 +21,9 @@
             </p>
 
             <form action="/admin/<%=h"#{@name}"%>" method="post">
-                <div class="input_field">
-                    <p>
-                        New Password(8-32 chars)
-                    </p>
-                    <input type="password" name="password" value="<%=h"#{@password}"%>">
-                </div>
-
-                <div class="input_field">
-                    <p>
-                        New Password(Retype)
-                    </p>
-                    <input type="password" name="password_retype" value="<%=h"#{@password_retype}"%>">
-                </div>
-
+                <input type="password" name="password" value="<%=h"#{@password}"%>" placeholder="New Password (8-32 chars)" autofocus>
+                <input type="password" name="password_retype" value="<%=h"#{@password_retype}"%>" placeholder="New Password (Retype)">
                 <input class="input_button" type="submit" value="MODIFY">
-
-                <input type="hidden" name="sessionid" value="<%=h"#{@context.sessionid}"%>">
             </form>
         </section>
 

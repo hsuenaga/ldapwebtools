@@ -61,19 +61,7 @@ section.input_form form.menu {
 	width: 70%;
 }
 
-section.input_form div.input_field {
-	min-width: 100%;
-}
-
-section.input_form div.input_field p {
-	margin-top: 0em;
-	margin-bottom: 0em;
-	margin-left: 0em;
-	margin-right: 0em;
-	min-width: 25%;
-}
-
-section.input_form div.input_field input {
+section.input_form input {
 	width: 70%;
 }
 

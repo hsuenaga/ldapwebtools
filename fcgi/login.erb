@@ -21,20 +21,8 @@
             </p>
 
             <form action="/admin/<%=h"#{@name}"%>" method="post">
-                <div class="input_field">
-                    <p>
-                        User ID(e-mail address)
-                    </p>
-                    <input type="text" name="userid" value="<%=h"#{@userid}"%>">
-                </div>
-                
-                <div class="input_field">
-                    <p>
-                        Password
-                    </p>
-                    <input type="password" name="password" value="<%=h"#{@password}"%>">
-                </div>
-
+                <input type="email" name="userid" value="<%=h"#{@userid}"%>" placeholder="User ID (Email Address)" autofocus>
+                <input type="password" name="password" value="<%=h"#{@password}"%>" placeholder="Pssword">
                 <input class="input_button" type="submit" value="LOGIN">
             </form>
         </section>
