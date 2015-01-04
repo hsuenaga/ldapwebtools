@@ -8,6 +8,8 @@ class Passwd < AdminHandler
   FORM_ERROR_PASSWD = "NG.. Missing Password"
   FORM_ERROR_RETYPE = "NG.. Retype Password"
   FORM_ERROR_MISMATCH = "NG.. Password mismatch"
+  FORM_ERROR_TOOSHORT = "NG.. Password too short(8 - 32 chars)"
+  FORM_ERROR_TOOLONG = "NG.. Password too long(8 - 32 chars)"
   UPDATE_SUCCESS_STRING = "OK!! Password Updated"
 
   def initialize(ldap, session, action, template)
@@ -33,6 +35,14 @@ class Passwd < AdminHandler
     end
     if @password != @password_retype
       @context.guide = FORM_ERROR_MISMATCH
+      return false
+    end
+    if @password.length < 8
+      @context.guide = FORM_ERROR_TOOSHORT
+      return false
+    end
+    if @password.length > 32
+      @context.guide = FORM_ERROR_TOOLONG
       return false
     end
 
