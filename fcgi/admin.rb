@@ -1,6 +1,13 @@
 #!/usr/bin/env ruby
 $LOAD_PATH << File.dirname(__FILE__)
 require 'rubygems'
+require 'syslog'
+require 'digest/sha1'
+require 'base64'
+require 'securerandom'
+require 'uri'
+require 'timeout'
+require 'ldap'
 require 'fcgi'
 require 'admin_control.rb'
 include ERB::Util
@@ -13,7 +20,7 @@ Syslog.open("FastCGI.Admin",
 # handle FastCGI request
 #
 def main()
-  Syslog.info("Starting FastCGI server")
+  Syslog.info("Starting FastCGI server (ruby #{RUBY_VERSION})")
   load_path = File.dirname(__FILE__)
   control = AdminControl.new(load_path, false)
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
-require './admin_control.rb'
-require './dummy_stub.rb'
+$LOAD_PATH << File.dirname(__FILE__)
+require 'admin_control.rb'
+require 'dummy_stub.rb'
 
 def main()
   control = AdminControl.new(".", true)
@@ -24,7 +25,7 @@ def main()
     {
       'SCRIPT_NAME' => "/admin/passwd",
       'REQUEST_METHOD' => "GET",
-      'QUERY_STRING' => "submit=modify&password=hoge&password_retype=hoge",
+      'QUERY_STRING' => "submit=modify&password=hogehoge&password_retype=hogehoge",
       'HTTP_HOST' => "localhost",
     }
   ]

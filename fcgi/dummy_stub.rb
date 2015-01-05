@@ -6,6 +6,10 @@ class LDAP_Entry
   def initialize(dn)
     @dn = dn
   end
+
+  def vals(attr)
+    attr
+  end
 end
 
 class LDAP

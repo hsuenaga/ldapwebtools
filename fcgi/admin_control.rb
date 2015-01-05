@@ -1,12 +1,5 @@
 #!/usr/bin/env ruby
 require 'rubygems'
-require 'syslog'
-require 'digest/sha1'
-require 'base64'
-require 'securerandom'
-require 'uri'
-require 'timeout'
-require 'ldap'
 require 'admin_session.rb'
 require 'admin_handler.rb'
 require 'admin_handler_login.rb'
@@ -61,21 +54,29 @@ class AdminControl
   end
 
   def log(message, *args)
-    if @debug
+    AdminControl::log(message, *args)
+  end
+
+  def self.log(message, *args)
+    if Syslog.opened?
+      Syslog.info(message, *args)
+    else
       printf(message, *args)
       printf("\n")
-    else
-      Syslog.info(message, *args)
     end
   end
 
-  def log_err(message,*args)
-    if @debug
+  def self.log_err(message,*args)
+    if Syslog.opened?
+      Syslog.err(message, *args)
+    else
       printf(message, *args)
       printf("\n")
-    else
-      Syslog.err(message, *args)
     end
+  end
+
+  def log_err(message, *args)
+    AdminControl::log_err(message, *args)
   end
 
   def debug_env(request)

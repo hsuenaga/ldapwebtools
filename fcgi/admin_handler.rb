@@ -71,7 +71,7 @@ class AdminHandler
                                 'path' => "/admin/",
                                 'secure' => true})
       new_cookie(cookie)
-      AdminHandler::log("Session \"%s\" open, uid \"%s\"",
+      AdminControl::log("Session \"%s\" open, uid \"%s\"",
         "#{@session}", userid)
       true
     end
@@ -86,7 +86,7 @@ class AdminHandler
                                   'path' => "/admin/",
                                   'secure' => true})
         new_cookie(cookie)
-        AdminHandler::log("Session \"%s\" close, uid \"%s\"",
+        AdminControl::log("Session \"%s\" close, uid \"%s\"",
           "#{@session}", userid)
         db.del_userid(@session.userid())
       end
@@ -126,20 +126,11 @@ class AdminHandler
   end
 
   def log(message, *args)
-    AdminHandler::log(message, *args)
-  end
-
-  def self.log(message, *args)
-    if @debug
-      printf(message, *args)
-      printf("\n")
-    else
-      Syslog.info(message, *args)
-    end
+    AdminControl::log(message, *args)
   end
 
   def log_err(message, *args)
-    AdminHandler::log_err(message, *args)
+    AdminControl::log_err(message, *args)
   end
 
   def self.log_err(message,*args)
