@@ -21,18 +21,7 @@ section {
 	margin-bottom: 1em;
 }
 
-section.input_form {
-	font-family: sans-serif;
-	border: solid thin #aaaaaa;
-	padding-top: 2.5%;
-	padding-bottom: 2.5%;
-	padding-left: 2.5%;
-	padding-right: 2.5%;
-	max-width: 40%;
-	float: left;
-}
-
-section.input_form h1 {
+section h1 {
 	margin-top: 0%;
 	margin-bottom: 0%;
 	margin-left: 0%;
@@ -40,11 +29,24 @@ section.input_form h1 {
 	border-bottom: solid thin #aaaaaa;
 }
 
-section.input_form p {
+section p {
 	margin-top: 1em;
 	margin-bottom: 1em;
 	margin-left: 0%;
 	margin-right: 0%;
+}
+
+section.input_form {
+	background: #ccddff;
+	font-family: sans-serif;
+	border: solid thin #aaaaaa;
+	padding-top: 2.5%;
+	padding-bottom: 2.5%;
+	padding-left: 2.5%;
+	padding-right: 2.5%;
+	width: 40%;
+	clear: both;
+	float: left;
 }
 
 section.input_form form {
@@ -52,6 +54,7 @@ section.input_form form {
 	margin-bottom: 0%;
 	margin-left: 0%;
 	margin-right: 0%;
+	width: 70%;
 }
 
 section.input_form form.menu {
@@ -59,7 +62,6 @@ section.input_form form.menu {
 	margin-bottom: 0%;
 	margin-left: 0%;
 	margin-right: 0%;
-	width: 70%;
 }
 
 section.input_form input {
@@ -90,30 +92,37 @@ section.input_form input.menu_button:hover {
 }
 
 section.id_card {
+	background: #ccddff;
 	font-family: sans-serif;
 	border: solid thin #aaaaaa;
 	padding-top: 2.5%;
 	padding-bottom: 2.5%;
 	padding-left: 2.5%;
 	padding-right: 2.5%;
-	min-width: 40%;
+	width: 40%;
+	clear: both;
 	float: right;
 }
 
-section.id_card h1 {
-	margin-top: 0%;
-	margin-bottom: 0%;
-	margin-left: 0%;
-	margin-right: 0%;
-	border-bottom: solid thin #aaaaaa;
+section.dump {
+	font-family: sans-serif;
+	border: solid thin #aaaaaa;
+	background: #ccddff;
+	padding-top: 2.5%;
+	padding-bottom: 2.5%;
+	padding-left: 2.5%;
+	padding-right: 2.5%;
+	width: 95%;
+	clear: both;
+}
+
+section.dump pre {
+	width: 700px;
 }
 
 footer {
-	width: 800px;
-	position: fixed;
 	bottom: 0%;
-	margin-top: 1em;
-	margin-bottom: 0;
-	text-align: right;
-	float: clear;
+	border-top: solid thin #000;
+	margin-top: 3em;
+	clear: both;
 }

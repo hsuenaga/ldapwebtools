@@ -117,7 +117,7 @@ class AdminHandler
     #
     # template
     #
-    @template = ERB.new(File.open(template).read())
+    @template = ERB.new(File.open(template).read(), nil, '-')
 
     #
     # context

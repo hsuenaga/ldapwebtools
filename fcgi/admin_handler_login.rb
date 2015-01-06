@@ -51,7 +51,7 @@ class Login < AdminHandler
         log("LDAP: #{@ldap.error}")
         return false
       end
-      @context.user_info = @ldap.serialize(entry)
+      @context.user_info = entry
 
       if !@ldap.userid_bind()
         log("LDAP: #{@ldap.error}")

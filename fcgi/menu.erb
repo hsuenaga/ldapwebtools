@@ -33,9 +33,20 @@
           <h1>ID CARD</h1>
 
           <pre>
-<%=h"#{@context.user_info.to_s()}"%>
+<%- if @context.user_info -%>
+<%=h "#{@context.user_info.to_s()}" -%>
+<%- end -%>
           </pre>
-        </sectino>
+        </section>
+
+        <section class="dump">
+          <h1>LDAP</h1>
+          <pre>
+<%- if @context.user_info -%>
+<%=h "#{@context.user_info.dump()}" -%>
+<%- end -%>
+          </pre>
+        </section>
 
         <footer>
             (c) 2014 Floatlink.JP. Allrights reverved.

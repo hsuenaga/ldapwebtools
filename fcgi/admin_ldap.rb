@@ -14,10 +14,54 @@ class LDAPHandler
 
   class LDAPUser
     attr_reader :dn, :maildrop, :mailaddr
-    def initialize(entry)
-      @dn = entry.dn
-      @maildrop = entry.vals('maildrop')
-      @mailaddr = entry.vals('mailacceptinggeneralid')
+    def initialize(e)
+      # entry = ruby-ldap entry (it has no memory allocator...)
+      @entry = e
+    end
+
+    def vals(key)
+      string = ""
+      if @entry.has_key?(key)
+        array = @entry[key]
+        first = true
+        array.each do |val|
+          string << "," if !first
+          string << "#{val}"
+        end
+      end
+
+      string
+    end
+
+    def dn()
+      p @entry
+      "#{@entry['dn'][0]}"
+    end
+
+    def to_s()
+      string = ""
+      string << "[     User ID] #{vals('uid')}\n"
+      if @entry.has_key?('mailacceptinggeneralid')
+        @entry['mailacceptinggeneralid'].each do |email|
+          string << "[Mail Address] #{email}\n"
+        end
+      end
+      if @entry.has_key?('maildrop')
+        @entry['maildrop'].each do |email|
+          string << "[Mail Forward] #{email}\n"
+        end
+      end
+      string
+    end
+
+    def dump()
+      string = ""
+      @entry.each_pair do |key, vals|
+        vals.each do |val|
+          string << "#{key}: #{val}\n"
+        end
+      end
+      string
     end
   end
 
@@ -112,16 +156,16 @@ class LDAPHandler
     dn_found = nil
     scope = LDAP::LDAP_SCOPE_BASE
     filter = "(objectClass=mailAccount)"
-    attrs = ['dn', 'maildrop', 'mailacceptinggeneralid']
 
     return false unless dn 
     return false unless default_bind()
 
     count = 0
     begin
-      @connection.search(dn, scope, filter, attrs) do |entry|
+      @connection.search(dn, scope, filter, nil) do |entry|
         count += 1
-        dn_found = LDAPUser.new(entry)
+        hash = entry.to_hash()
+        dn_found = LDAPUser.new(hash)
       end
     rescue LDAP::ResultError => e
       @error = e.to_s()
@@ -146,14 +190,6 @@ class LDAPHandler
     return dn_found
   end
   
-  def serialize(userinfo)
-    string = ""
-    string += "DN: #{userinfo.dn}\n"
-    string += "MAIL ADDRESS: #{userinfo.mailaddr}\n"
-    string += "FORWARD:#{userinfo.maildrop}\n"
-    string
-  end
-
   def mod_userPassword(password_new)
     changepw = [
       LDAP::Mod.new(LDAP::LDAP_MOD_REPLACE,
