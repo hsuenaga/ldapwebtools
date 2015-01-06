@@ -10,6 +10,10 @@ class LDAP_Entry
   def vals(attr)
     attr
   end
+
+  def to_hash()
+    {"dn" => ["#{@dn}"]}
+  end
 end
 
 class LDAP
@@ -59,15 +63,5 @@ class LDAP
   end
 
   def initialize
-  end
-end
-
-class Request
-  attr_accessor :env, :in, :out
-
-  def initialize(env)
-    @env = env
-    @in = STDIN
-    @out = STDOUT
   end
 end

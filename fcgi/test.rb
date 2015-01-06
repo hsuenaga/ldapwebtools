@@ -2,9 +2,22 @@
 $LOAD_PATH << File.dirname(__FILE__)
 require 'admin_control.rb'
 require 'dummy_stub.rb'
+#require 'ldap'
+
+class Request
+  attr_accessor :env, :in, :out
+
+  def initialize(env)
+    @env = env
+    @in = STDIN
+    @out = STDOUT
+  end
+end
 
 def main()
+  print "Ruby #{RUBY_VERSION}\n"
   control = AdminControl.new(".", true)
+
 
   #
   # Main loop
@@ -19,7 +32,7 @@ def main()
     {
       'SCRIPT_NAME' => "/admin/login",
       'REQUEST_METHOD' => "GET",
-      'QUERY_STRING' => "submit=login&userid=testuser@floatlink.jp&password=test",
+      'QUERY_STRING' => "submit=login&userid=testuser@floatlink.jp&password=hogehoge",
       'HTTP_HOST' => "localhost",
     },
     {
