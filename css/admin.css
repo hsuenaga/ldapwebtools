@@ -37,7 +37,7 @@ section p {
 }
 
 section.input_form {
-	background: #ccddff;
+	background: linear-gradient(#ccddee,#ffffff);
 	font-family: sans-serif;
 	border: solid thin #aaaaaa;
 	padding-top: 2.5%;
@@ -92,7 +92,7 @@ section.input_form input.menu_button:hover {
 }
 
 section.id_card {
-	background: #ccddff;
+	background: linear-gradient(#ccddee,#ffffff);
 	font-family: sans-serif;
 	border: solid thin #aaaaaa;
 	padding-top: 2.5%;
@@ -107,7 +107,7 @@ section.id_card {
 section.dump {
 	font-family: sans-serif;
 	border: solid thin #aaaaaa;
-	background: #ccddff;
+	background: linear-gradient(#ccddee,#ffffff);
 	padding-top: 2.5%;
 	padding-bottom: 2.5%;
 	padding-left: 2.5%;
