@@ -15,27 +15,29 @@ class Login < AdminHandler
     @name = "login"
     @userid = ""
     @password = ""
+    @user_info = nil
   end
 
   def clear_form()
     @userid = ""
     @password = ""
+    @user_info = nil
   end
 
   def check_form()
     if @userid == nil || @userid == ""
-      @context.guide = FORM_ERROR_USERID
+      @session.guide = FORM_ERROR_USERID
       return false
     end
     if @password == nil || @password == ""
-      @context.guide = FORM_ERROR_PASSWD
+      @session.guide = FORM_ERROR_PASSWD
       return false
     end
     true 
   end
 
   def try_login()
-      @context.guide = AUTH_ERROR_GENERIC
+      @guide = AUTH_ERROR_GENERIC
 
       log("Checking Form(#{@name})")
       return false unless check_form()
@@ -51,7 +53,8 @@ class Login < AdminHandler
         log("LDAP: #{@ldap.error}")
         return false
       end
-      @context.user_info = entry
+      log("ldap entry: %s", entry)
+      @user_info = entry
 
       if !@ldap.userid_bind()
         log("LDAP: #{@ldap.error}")
@@ -63,7 +66,7 @@ class Login < AdminHandler
         return false
       end
 
-      @context.guide = AUTH_SUCCESS_STRING
+      @guide = AUTH_SUCCESS_STRING
       true
   end
 
@@ -84,6 +87,13 @@ class Login < AdminHandler
     @ldap.password = @password
     if try_login()
       @context.new_session(@sessiondb, @userid, @password)
+      @session = @context.session
+      if @session
+        @session.guide = @guide
+        @session.user_info = @user_info
+        log("GUIDE: %s", @session.guide)
+        log("USER INFO: %s", @session.user_info)
+      end
       @context.destination = :menu
       @context.action = :init
     else
@@ -101,7 +111,7 @@ class Login < AdminHandler
     when :init
       log("Create New FORM(#{@name}.#{@context.action})")
       clear_form()
-      @context.guide = AUTH_WELCOME
+      @guide = AUTH_WELCOME
     when :login
       log("Retry FORM(#{@name}.#{@context.action})")
     when :error

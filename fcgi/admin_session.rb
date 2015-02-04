@@ -5,6 +5,7 @@ require 'base64'
 
 class AdminSession
   attr_reader :userid, :password, :sessionid, :timestamp, :timeout
+  attr_accessor :guide, :user_info
 
   def initialize(userid, password, timeout)
     @userid = userid.to_s()
@@ -12,6 +13,9 @@ class AdminSession
     @timestamp = Time.now()
     @timeout = timeout.to_i()
     @sessionid = _new_sessionid()
+
+    @guide = ""
+    @user_info = nil
   end
 
   def _new_sessionid()

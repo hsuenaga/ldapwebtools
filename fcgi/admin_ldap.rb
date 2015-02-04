@@ -40,15 +40,15 @@ class LDAPHandler
 
     def to_s()
       string = ""
-      string << "[     User ID] #{vals('uid')}\n"
+      string <<     "[     User ID] #{vals('uid')}\n"
       if @entry.has_key?('mailacceptinggeneralid')
         @entry['mailacceptinggeneralid'].each do |email|
-          string << "[Mail Address] #{email}\n"
+          string << "[Recv Address] #{email}\n"
         end
       end
       if @entry.has_key?('maildrop')
         @entry['maildrop'].each do |email|
-          string << "[Mail Forward] #{email}\n"
+          string << "[Fwd  Address] #{email}\n"
         end
       end
       string

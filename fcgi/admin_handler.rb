@@ -18,18 +18,18 @@ class AdminHandler
 
   class Context
     attr_reader :myname, :query
-    attr_accessor :destination, :action, :guide, :debug, :user_info
+    attr_accessor :destination, :action, :debug, :session
 
-    def initialize(myname, query, session, guide)
+    def initialize(myname, query, session, guide = nil)
       @myname = myname
       @query = query
-      @session = session
       @destination = :login
       @action = :init
-      @guide = guide
       @cookie_issue = []
       @cookie_recv = {}
-      @user_info = nil
+
+      @session = session
+      @session.guide = guide if guide
     end
 
     def sessionid()
@@ -45,6 +45,16 @@ class AdminHandler
     def password()
       return nil unless @session
       @session.password
+    end
+
+    def guide()
+      return nil unless @session
+      @session.guide
+    end
+
+    def user_info()
+      return nil unless @session
+      @session.user_info
     end
 
     def new_cookie(cookie)
@@ -93,7 +103,7 @@ class AdminHandler
       @session = nil
       true
     end
-  end
+  end ## class Context
 
   def initialize(ldap, session, action, template)
     @name = nil
@@ -117,7 +127,7 @@ class AdminHandler
     #
     # template
     #
-    @template = ERB.new(File.open(template).read(), nil, '-')
+    @template = ERB.new(File.open(template).read(), nil, '-') if template
 
     #
     # context
@@ -193,16 +203,36 @@ class AdminHandler
 
     # parse cookie
     cookie_recv = parse_subst(request.env['HTTP_COOKIE'])
+    if cookie_recv[COOKIE_AUTH_TOKEN]
+      log("Cookie-Recv: %s=%s",
+        COOKIE_AUTH_TOKEN, cookie_recv[COOKIE_AUTH_TOKEN])
+    else
+      log("Cookie-Recv: NONE")
+    end
 
     # resume session
-    session = @sessiondb.resume_session(cookie_recv[COOKIE_AUTH_TOKEN])
-
-    @context = Context.new(myname, query, session, "")
+    @session = @sessiondb.resume_session(cookie_recv[COOKIE_AUTH_TOKEN])
+    @context = Context.new(myname, query, @session)
   end
 
-  def http_header(context)
+  def resource_name()
+    resource = "/admin"
+    resource << "/#{@name}" if @name
+  end
+
+  def http_header(context, status = 200)
     header = ""
-    header += "Content-Type: text/html\r\n"
+    case status
+    when 200
+      header += "Status: 200 OK\r\n"
+      header += "Content-Type: text/html; charset=utf-8\r\n"
+    when 303
+      header += "Status: 303 See Other\r\n"
+      header += "Location: #{resource_name}\r\n"
+    else
+      header += "Status: #{status}\r\n"
+      header += "Content-Type: text/html; charset=utf-8\r\n"
+    end
     context.each_cookie do |cookie|
       header += "Set-Cookie: #{cookie}\r\n"
       log("Cookie-Issue: %s", cookie)
@@ -214,7 +244,8 @@ class AdminHandler
   end
 
   def reply_response(context)
-    log("GUIDE: #{context.guide}")
+    @session = context.session
+    log("GUIDE: #{@session.guide}") if @session
     action = @actionid_map[context.action()]
     contents = ""
     if !@template
@@ -223,6 +254,11 @@ class AdminHandler
     log("NextHandler => #{@name}")
     contents += http_header(context)
     contents += @template.result(binding)
+  end
+
+  def redirect(context)
+    contents = ""
+    contents += http_header(context, 303)
   end
 
   def finish()

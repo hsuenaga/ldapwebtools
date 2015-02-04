@@ -5,6 +5,8 @@ require 'admin_handler.rb'
 require 'admin_handler_login.rb'
 require 'admin_handler_password.rb'
 require 'admin_handler_menu.rb'
+require 'admin_handler_logout.rb'
+require 'admin_handler_default.rb'
 require 'admin_ldap.rb'
 include ERB::Util
 
@@ -47,6 +49,12 @@ class AdminControl
     template = File.join(load_path, "menu.erb")
     @menu = Menu.new(@ldap, @session, @action, template)
     raise RuntimeError unless @menu
+
+    @logout = Logout.new(@ldap, @session, @action, nil)
+    raise RuntimeError unless @logout
+
+    @default = Default.new(@ldap, @session, @action, nil)
+    raise RuntimeError unless @default
 
     @debug = debug
     @login.debug = @debug
@@ -122,8 +130,10 @@ class AdminControl
       handler = @passwd
     when /^\/admin\/menu$/
       handler = @menu
+    when /^\/admin\/logout$/
+      handler = @logout
     else 
-      handler = @login
+      handler = @default
       error = true
     end
 
@@ -139,10 +149,10 @@ class AdminControl
       context.destination = :login
       context.action = :init
     end
-    reflect(request, context)
+    reflect(request, context, handler)
   end
 
-  def reflect(request, context)
+  def reflect(request, context, handler)
     # generate response
     case context.destination
     when :login
@@ -158,7 +168,13 @@ class AdminControl
       context.action = :init
     end
 
-    html = responder.reply_response(context)
+    if handler != responder
+      log("Send redirect: #{handler.name} => #{responder.name}")
+      html = responder.redirect(context)
+    else
+      html = responder.reply_response(context)
+    end
+
     request.out.print(html) unless @debug
     debug_env(request) if @debug
     responder.finish()

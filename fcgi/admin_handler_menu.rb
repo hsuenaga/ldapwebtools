@@ -14,6 +14,11 @@ class Menu < AdminHandler
   def handle_request(request)
     super(request)
 
+    if @context.session
+      @context.destination = :menu
+    else
+      @context.destination = :login
+    end
     @context.action = :init
     @context
   end

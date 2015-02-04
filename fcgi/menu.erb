@@ -17,7 +17,7 @@
             <h1>MENU</h1>
 
             <p>
-                <%=h"#{@context.guide}"%>
+                <%=h"#{@session.guide}"%>
             </p>
 
             <form class="menu" action="/admin/passwd" method="post">
@@ -33,17 +33,17 @@
           <h1>ID CARD</h1>
 
           <pre>
-<%- if @context.user_info -%>
-<%=h "#{@context.user_info.to_s()}" -%>
+<%- if @session.user_info -%>
+<%=h "#{@session.user_info.to_s()}" -%>
 <%- end -%>
           </pre>
         </section>
 
         <section class="dump">
-          <h1>LDAP</h1>
+          <h1>LDAP ENTRY</h1>
           <pre>
-<%- if @context.user_info -%>
-<%=h "#{@context.user_info.dump()}" -%>
+<%- if @session.user_info -%>
+<%=h "#{@session.user_info.dump()}" -%>
 <%- end -%>
           </pre>
         </section>

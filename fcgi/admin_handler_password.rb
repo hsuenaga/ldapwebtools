@@ -26,23 +26,23 @@ class Passwd < AdminHandler
 
   def check_form()
     if @password == nil || @password == ""
-      @context.guide = FORM_ERROR_PASSWD
+      @session.guide = FORM_ERROR_PASSWD
       return false
     end
     if @password_retype == nil || @password_retype == ""
-      @context.guide = FORM_ERROR_RETYPE
+      @session.guide = FORM_ERROR_RETYPE
       return false
     end
     if @password != @password_retype
-      @context.guide = FORM_ERROR_MISMATCH
+      @session.guide = FORM_ERROR_MISMATCH
       return false
     end
     if @password.length < 8
-      @context.guide = FORM_ERROR_TOOSHORT
+      @session.guide = FORM_ERROR_TOOSHORT
       return false
     end
     if @password.length > 32
-      @context.guide = FORM_ERROR_TOOLONG
+      @session.guide = FORM_ERROR_TOOLONG
       return false
     end
 
@@ -50,7 +50,7 @@ class Passwd < AdminHandler
   end
 
   def try_update()
-    @context.guide = AUTH_ERROR_SESSION
+    @session.guide = AUTH_ERROR_SESSION
 
     log("Checking Form(#{@name})")
     return false unless check_form()
@@ -71,7 +71,7 @@ class Passwd < AdminHandler
       return false
     end
 
-    @context.guide = UPDATE_SUCCESS_STRING
+    @session.guide = UPDATE_SUCCESS_STRING
     true
   end
 
@@ -82,7 +82,7 @@ class Passwd < AdminHandler
     password = @context.password()
     if !userid || !password || userid == "" || password == ""
       log("Broken Session")
-      @context.guide = AUTH_ERROR_SESSION
+      @session.guide = AUTH_ERROR_SESSION
       @context.destination = :login
       @context.action = :error
       return @context
@@ -118,7 +118,7 @@ class Passwd < AdminHandler
     case @context.action
     when :init
       clear_form()
-      @context.guide = PASSWD_WELCOME
+      @context.session.guide = PASSWD_WELCOME
       @context.action = :modify
     end
 
